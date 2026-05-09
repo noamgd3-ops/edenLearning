@@ -410,10 +410,13 @@ def show_summary():
 # ══════════════════════════════════════════════════════════════════════════
 def show_analytics():
     st.title("📊 אנליטיקס")
-    col_back, col_reset = st.columns([3, 1])
+    col_back, col_refresh, col_reset = st.columns([3, 1, 1])
     with col_back:
         if st.button("🏠 חזרה לבית"):
             reset_session()
+            st.rerun()
+    with col_refresh:
+        if st.button("🔄 רענן"):
             st.rerun()
     with col_reset:
         if st.button("🗑️ איפוס הכל", type="secondary"):
