@@ -1,21 +1,16 @@
-import os
 from datetime import date, timedelta
 
 from supabase import create_client
 
-def _get_credentials():
-    try:
-        import streamlit as st
-        url = st.secrets["SUPABASE_URL"]
-        key = st.secrets["SUPABASE_KEY"]
-    except Exception:
-        url = os.environ.get("SUPABASE_URL", "https://qdgofyprngpuzlcudmvf.supabase.co")
-        key = os.environ.get("SUPABASE_KEY", "")
-    return url, key
+_SUPABASE_URL = "https://qdgofyprngpuzlcudmvf.supabase.co"
+_SUPABASE_KEY = (
+    "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9"
+    ".eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InFkZ29meXBybmdwdXpsY3VkbXZmIiwicm9sZSI6ImFub24iLCJpYXQiOjE3Njg1NzQwMTAsImV4cCI6MjA4NDE1MDAxMH0"
+    ".ZMa7kxzuaoNWOW5Ml2sFX-ztKRSyJxNraE4d7vm4zVw"
+)
 
 def _client():
-    url, key = _get_credentials()
-    return create_client(url, key)
+    return create_client(_SUPABASE_URL, _SUPABASE_KEY)
 
 def init_db(db_path=None):
     pass  # Table already exists in Supabase
