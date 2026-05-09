@@ -118,11 +118,14 @@ PRACTICE_MODES = {
 
 def _build_session_words(selected_mode):
     if selected_mode == "hebrew_both":
-        both = (
-            [{"verb": v, "mode": "inf_to_hebrew"} for v in verbs] +
-            [{"verb": v, "mode": "past_to_hebrew"} for v in verbs]
-        )
-        random.shuffle(both)
+        inf_list = [{"verb": v, "mode": "inf_to_hebrew"} for v in verbs]
+        past_list = [{"verb": v, "mode": "past_to_hebrew"} for v in verbs]
+        random.shuffle(inf_list)
+        random.shuffle(past_list)
+        # Rotate past_list by half so the same verb can't land next to itself
+        offset = len(past_list) // 2
+        past_list = past_list[offset:] + past_list[:offset]
+        both = [item for pair in zip(inf_list, past_list) for item in pair]
         return both
     progress = get_all_progress()
     raw = pick_session_words(verbs, progress, SESSION_SIZE)
