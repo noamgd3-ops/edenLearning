@@ -97,3 +97,9 @@ def get_all_progress(db_path=DB_PATH):
     rows = con.execute("SELECT * FROM progress").fetchall()
     con.close()
     return {r[0]: _row_to_dict(r) for r in rows}
+
+def reset_all_progress(db_path=DB_PATH):
+    con = sqlite3.connect(db_path)
+    con.execute("DELETE FROM progress")
+    con.commit()
+    con.close()

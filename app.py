@@ -7,7 +7,7 @@ import streamlit.components.v1 as components
 
 import random
 
-from src.db import init_db, get_all_progress, update_progress
+from src.db import init_db, get_all_progress, update_progress, reset_all_progress
 from src.scheduler import pick_session_words
 from src.exercises import generate_exercise, check_answer
 
@@ -410,9 +410,29 @@ def show_summary():
 # ══════════════════════════════════════════════════════════════════════════
 def show_analytics():
     st.title("📊 אנליטיקס")
-    if st.button("🏠 חזרה לבית"):
-        reset_session()
-        st.rerun()
+    col_back, col_reset = st.columns([3, 1])
+    with col_back:
+        if st.button("🏠 חזרה לבית"):
+            reset_session()
+            st.rerun()
+    with col_reset:
+        if st.button("🗑️ איפוס הכל", type="secondary"):
+            st.session_state.confirm_reset = True
+            st.rerun()
+
+    if st.session_state.get("confirm_reset"):
+        st.warning("את בטוחה? כל הנתונים יימחקו!")
+        col_yes, col_no = st.columns(2)
+        with col_yes:
+            if st.button("כן, מחקי הכל 🗑️", type="primary"):
+                reset_all_progress(DB_PATH)
+                st.session_state.confirm_reset = False
+                st.success("כל הנתונים אופסו ✅")
+                st.rerun()
+        with col_no:
+            if st.button("ביטול"):
+                st.session_state.confirm_reset = False
+                st.rerun()
 
     progress = get_all_progress(DB_PATH)
     verb_lookup = {v["infinitive"]: v for v in verbs}
