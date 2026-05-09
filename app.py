@@ -112,13 +112,24 @@ PRACTICE_MODES = {
     "🎲 כללי": None,
     "✍️ spelling הווה": "heb_to_inf",
     "✍️ spelling עבר": "inf_to_past",
-    "🇮🇱 פירוש בעברית": "inf_to_hebrew",
+    "🇮🇱 פירוש בעברית": "hebrew_both",
     "✏️ השלם את המשפט": "fill_blank",
 }
 
-def reset_session():
+def _build_session_words(selected_mode):
+    if selected_mode == "hebrew_both":
+        both = (
+            [{"verb": v, "mode": "inf_to_hebrew"} for v in verbs] +
+            [{"verb": v, "mode": "past_to_hebrew"} for v in verbs]
+        )
+        random.shuffle(both)
+        return both
     progress = get_all_progress()
-    session_words = pick_session_words(verbs, progress, SESSION_SIZE)
+    raw = pick_session_words(verbs, progress, SESSION_SIZE)
+    return [{"verb": v, "mode": None} for v in raw]
+
+def reset_session():
+    session_words = _build_session_words(None)
     st.session_state.update({
         "screen": "home",
         "session_words": session_words,
@@ -155,8 +166,9 @@ def show_home():
     col3.markdown(f'<div class="stat-box">🆕 חדש<br><b style="font-size:1.5rem">{new_count}</b></div>', unsafe_allow_html=True)
 
     st.write("")
-    due_words = st.session_state.session_words
-    st.info(f"סשן היום: **{len(due_words)} פעלים** לתרגול.")
+    selected = st.session_state.get("selected_mode")
+    n = 170 if selected == "hebrew_both" else len(st.session_state.session_words)
+    st.info(f"סשן היום: **{n} שאלות** לתרגול.")
 
     st.subheader("בחרי סוג תרגול:")
     cols = st.columns(len(PRACTICE_MODES))
@@ -178,6 +190,8 @@ def show_home():
         pass
 
     if st.button("▶  התחלי תרגול", type="primary", width="stretch"):
+        selected = st.session_state.get("selected_mode")
+        st.session_state.session_words = _build_session_words(selected)
         st.session_state.screen = "exercise"
         st.session_state.session_index = 0
         st.session_state.session_correct = 0
@@ -222,7 +236,9 @@ def show_exercise():
         reset_session()
         st.rerun()
 
-    verb = words[idx]
+    item = words[idx]
+    verb = item["verb"]
+    forced_mode = item["mode"]
     progress_pct = idx / len(words)
     st.progress(progress_pct, text=f"שאלה {idx + 1} מתוך {len(words)}")
 
@@ -230,7 +246,8 @@ def show_exercise():
     st.caption(f"✅ {correct_so_far} נכונות עד כה")
 
     if st.session_state.current_ex is None:
-        st.session_state.current_ex = generate_exercise(verb, mode=st.session_state.get("selected_mode"))
+        effective_mode = forced_mode or st.session_state.get("selected_mode")
+        st.session_state.current_ex = generate_exercise(verb, mode=effective_mode)
         st.session_state.submitted = False
         st.session_state.show_hint = False
         st.session_state.question_start_time = time.time()
