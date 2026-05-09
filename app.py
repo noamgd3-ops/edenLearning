@@ -211,6 +211,10 @@ def show_exercise():
         st.rerun()
         return
 
+    if st.button("🏠 חזרה לבית", key="back_home"):
+        reset_session()
+        st.rerun()
+
     verb = words[idx]
     progress_pct = idx / len(words)
     st.progress(progress_pct, text=f"שאלה {idx + 1} מתוך {len(words)}")
