@@ -277,7 +277,8 @@ def show_exercise():
             st.session_state.last_correct = correct
             st.session_state.last_response_time = elapsed
             st.session_state.submitted = True
-            update_progress(verb["infinitive"], correct=correct, response_time=elapsed, db_path=DB_PATH)
+            wrong_ans = "" if correct else user_input.strip()
+            update_progress(verb["infinitive"], correct=correct, response_time=elapsed, wrong_answer=wrong_ans, db_path=DB_PATH)
             if correct:
                 st.session_state.session_correct += 1
             st.session_state.session_results.append({
@@ -453,6 +454,7 @@ def show_analytics():
         accuracy = int(correct / seen * 100) if seen else 0
         avg_time = p.get("total_response_time", 0) / seen if seen else 0
         last_time = p.get("last_response_time", 0)
+        last_wrong = p.get("last_wrong_answer", "") or ""
         rows.append({
             "פועל": verb,
             "עבר": v.get("past", ""),
@@ -461,6 +463,7 @@ def show_analytics():
             "✅ נכון": correct,
             "❌ טעות": wrong,
             "דיוק %": accuracy,
+            "כתבת במקום": last_wrong,
             "זמן אחרון (s)": round(last_time, 2),
             "זמן ממוצע (s)": round(avg_time, 2),
             "סטטוס": p["status"],

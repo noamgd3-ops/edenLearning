@@ -16,11 +16,15 @@ def init_db(db_path=DB_PATH):
             consecutive_correct INTEGER DEFAULT 0,
             status TEXT DEFAULT 'new',
             total_response_time REAL DEFAULT 0.0,
-            last_response_time REAL DEFAULT 0.0
+            last_response_time REAL DEFAULT 0.0,
+            last_wrong_answer TEXT DEFAULT ''
         )
     """)
-    # migrate existing DBs that don't have the new columns
-    for col in ("total_response_time REAL DEFAULT 0.0", "last_response_time REAL DEFAULT 0.0"):
+    for col in (
+        "total_response_time REAL DEFAULT 0.0",
+        "last_response_time REAL DEFAULT 0.0",
+        "last_wrong_answer TEXT DEFAULT ''",
+    ):
         try:
             con.execute(f"ALTER TABLE progress ADD COLUMN {col}")
         except Exception:
@@ -31,7 +35,7 @@ def init_db(db_path=DB_PATH):
 def _row_to_dict(row):
     keys = ["verb", "times_seen", "times_correct", "ease_factor",
             "interval_days", "next_review", "consecutive_correct", "status",
-            "total_response_time", "last_response_time"]
+            "total_response_time", "last_response_time", "last_wrong_answer"]
     return dict(zip(keys, row))
 
 def get_progress(verb, db_path=DB_PATH):
@@ -44,14 +48,16 @@ def get_progress(verb, db_path=DB_PATH):
         "verb": verb, "times_seen": 0, "times_correct": 0,
         "ease_factor": 2.5, "interval_days": 1.0,
         "next_review": "2000-01-01", "consecutive_correct": 0, "status": "new",
-        "total_response_time": 0.0, "last_response_time": 0.0,
+        "total_response_time": 0.0, "last_response_time": 0.0, "last_wrong_answer": "",
     }
 
-def update_progress(verb, correct, response_time=0.0, db_path=DB_PATH):
+def update_progress(verb, correct, response_time=0.0, wrong_answer="", db_path=DB_PATH):
     p = get_progress(verb, db_path)
     p["times_seen"] += 1
     p["total_response_time"] = p.get("total_response_time", 0.0) + response_time
     p["last_response_time"] = response_time
+    if not correct and wrong_answer:
+        p["last_wrong_answer"] = wrong_answer
 
     if correct:
         p["times_correct"] += 1
@@ -75,7 +81,7 @@ def update_progress(verb, correct, response_time=0.0, db_path=DB_PATH):
 
     con = sqlite3.connect(db_path)
     con.execute("""
-        INSERT INTO progress VALUES (?,?,?,?,?,?,?,?,?,?)
+        INSERT INTO progress VALUES (?,?,?,?,?,?,?,?,?,?,?)
         ON CONFLICT(verb) DO UPDATE SET
             times_seen=excluded.times_seen,
             times_correct=excluded.times_correct,
@@ -85,10 +91,11 @@ def update_progress(verb, correct, response_time=0.0, db_path=DB_PATH):
             consecutive_correct=excluded.consecutive_correct,
             status=excluded.status,
             total_response_time=excluded.total_response_time,
-            last_response_time=excluded.last_response_time
+            last_response_time=excluded.last_response_time,
+            last_wrong_answer=excluded.last_wrong_answer
     """, (p["verb"], p["times_seen"], p["times_correct"], p["ease_factor"],
           p["interval_days"], p["next_review"], p["consecutive_correct"], p["status"],
-          p["total_response_time"], p["last_response_time"]))
+          p["total_response_time"], p["last_response_time"], p.get("last_wrong_answer", "")))
     con.commit()
     con.close()
 
