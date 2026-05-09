@@ -10,11 +10,11 @@ from src.exercises import generate_exercise, check_answer
 
 DB_PATH = "data/progress.db"
 VERBS_PATH = "data/verbs.json"
-SESSION_SIZE = len(verbs)
 
 Path("data").mkdir(exist_ok=True)
 init_db(DB_PATH)
 verbs = json.loads(Path(VERBS_PATH).read_text(encoding="utf-8"))
+SESSION_SIZE = len(verbs)
 
 st.set_page_config(page_title="פעלים לא סדירים", page_icon="📚", layout="centered")
 
