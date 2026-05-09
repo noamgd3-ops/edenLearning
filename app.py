@@ -1,4 +1,5 @@
 import json
+import time
 from pathlib import Path
 
 import streamlit as st
@@ -226,6 +227,7 @@ def show_exercise():
         st.session_state.current_ex = generate_exercise(verb, mode=st.session_state.get("selected_mode"))
         st.session_state.submitted = False
         st.session_state.show_hint = False
+        st.session_state.question_start_time = time.time()
 
     ex = st.session_state.current_ex
 
@@ -262,8 +264,10 @@ def show_exercise():
             st.rerun()
 
         if submit and user_input.strip():
+            elapsed = time.time() - st.session_state.get("question_start_time", time.time())
             correct = check_answer(user_input, ex["answer"])
             st.session_state.last_correct = correct
+            st.session_state.last_response_time = elapsed
             st.session_state.submitted = True
             update_progress(verb["infinitive"], correct=correct, db_path=DB_PATH)
             if correct:
@@ -276,6 +280,7 @@ def show_exercise():
                 "correct": correct,
                 "user_answer": user_input.strip(),
                 "mode": ex["mode"],
+                "response_time": elapsed,
             })
             st.rerun()
 
@@ -286,13 +291,19 @@ def show_exercise():
         inf = verb["infinitive"]
         past = verb["past"]
 
+        elapsed = st.session_state.get("last_response_time", 0)
+        secs = int(elapsed)
+        ms = int((elapsed - secs) * 1000)
+        time_str = f"⏱️ {secs}s {ms}ms"
+
         if correct:
             msg = random.choice(CORRECT_MESSAGES)
             st.markdown(
                 f'<div class="correct-box">'
                 f'<span style="font-size:1.4rem;font-weight:700">{msg}</span><br>'
                 f'<b>{inf}</b> → <b>{past}</b> &nbsp;&nbsp; '
-                f'<span style="font-size:1.2rem">🇮🇱 {heb} ← {heb_past}</span>'
+                f'<span style="font-size:1.2rem">🇮🇱 {heb} ← {heb_past}</span><br>'
+                f'<span style="font-size:0.85rem;opacity:0.7">{time_str}</span>'
                 f'</div>',
                 unsafe_allow_html=True
             )
@@ -302,7 +313,8 @@ def show_exercise():
                 f'<div class="wrong-box">'
                 f'<span style="font-size:1.2rem;font-weight:700">{wrong_msg}</span><br>'
                 f'התשובה הנכונה היא: <b>{ex["answer"]}</b> &nbsp;&nbsp; '
-                f'<span style="font-size:1.2rem">🇮🇱 {heb} ← {heb_past}</span>'
+                f'<span style="font-size:1.2rem">🇮🇱 {heb} ← {heb_past}</span><br>'
+                f'<span style="font-size:0.85rem;opacity:0.7">{time_str}</span>'
                 f'</div>',
                 unsafe_allow_html=True
             )
@@ -325,9 +337,15 @@ def show_summary():
 
     st.title("🎉 הסשן הסתיים!")
 
-    col1, col2 = st.columns(2)
+    times = [r.get("response_time", 0) for r in results if r.get("response_time")]
+    avg_time = sum(times) / len(times) if times else 0
+    avg_s = int(avg_time)
+    avg_ms = int((avg_time - avg_s) * 1000)
+
+    col1, col2, col3 = st.columns(3)
     col1.metric("ניקוד", f"{correct} / {total}")
     col2.metric("דיוק", f"{pct}%")
+    col3.metric("זמן ממוצע", f"{avg_s}s {avg_ms}ms")
 
     if pct == 100:
         st.success("ציון מושלם! 🏆 מדהים!")
