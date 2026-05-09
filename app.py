@@ -43,7 +43,7 @@ init_db(DB_PATH)
 verbs = json.loads(Path(VERBS_PATH).read_text(encoding="utf-8"))
 SESSION_SIZE = len(verbs)
 
-st.set_page_config(page_title="פעלים לא סדירים", page_icon="📚", layout="centered")
+st.set_page_config(page_title="School Cool", page_icon="🔥", layout="centered")
 
 st.markdown("""
 <style>
@@ -133,7 +133,7 @@ if "screen" not in st.session_state:
 # מסך בית
 # ══════════════════════════════════════════════════════════════════════════
 def show_home():
-    st.title("📚 אימון פעלים לא סדירים")
+    st.title("🔥 School Cool")
 
     progress = get_all_progress(DB_PATH)
     total = len(verbs)
