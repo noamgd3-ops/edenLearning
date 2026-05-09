@@ -11,11 +11,14 @@ import random
 MODES = ["heb_to_inf", "inf_to_past", "past_to_inf", "inf_to_hebrew", "past_to_hebrew", "fill_blank"]
 
 FILL_TEMPLATES = [
-    "אתמול אני ___ [hint].",
-    "שבוע שעבר היא ___ [hint].",
-    "הם ___ [hint] בשנה שעברה.",
-    "הוא ___ [hint] הבוקר.",
-    "אנחנו ___ [hint] ביחד.",
+    "Yesterday I ___ [hint].",
+    "Last week she ___ [hint].",
+    "They ___ [hint] last year.",
+    "He ___ [hint] this morning.",
+    "We ___ [hint] together.",
+    "Last night she ___ [hint].",
+    "Two days ago they ___ [hint].",
+    "He ___ [hint] when he was young.",
 ]
 
 def generate_exercise(verb, mode=None):
