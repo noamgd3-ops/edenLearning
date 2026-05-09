@@ -199,11 +199,12 @@ def show_exercise():
     ex = st.session_state.current_ex
 
     mode_labels = {
-        "heb_to_inf":  "🇮🇱 עברית → אנגלית",
-        "inf_to_past":  "⏪ שם פועל → עבר",
-        "past_to_inf":  "⏩ עבר → שם פועל",
-        "scramble":     "🔀 סדר את האותיות",
-        "fill_blank":   "✏️ השלם את החסר",
+        "heb_to_inf":     "✍️ איית את ההווה באנגלית",
+        "inf_to_past":    "✍️ איית את העבר באנגלית",
+        "past_to_inf":    "✍️ איית את ההווה באנגלית",
+        "inf_to_hebrew":  "🇮🇱 מה הפירוש בעברית? (הווה)",
+        "past_to_hebrew": "🇮🇱 מה הפירוש בעברית? (עבר)",
+        "fill_blank":     "✏️ השלם את החסר",
     }
     st.markdown(f'<span class="mode-badge">{mode_labels.get(ex["mode"], ex["mode"])}</span>', unsafe_allow_html=True)
     st.markdown(f'<div class="big-prompt">{ex["prompt"]}</div>', unsafe_allow_html=True)

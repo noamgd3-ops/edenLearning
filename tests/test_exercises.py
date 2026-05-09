@@ -22,10 +22,13 @@ def test_past_to_inf_answer():
     ex = generate_exercise(VERB, mode="past_to_inf")
     assert ex["answer"] == "write"
 
-def test_scramble_answer():
-    ex = generate_exercise(VERB, mode="scramble")
-    assert ex["answer"] == "wrote"
-    assert sorted(ex["scrambled"]) == sorted("wrote")
+def test_inf_to_hebrew_answer():
+    ex = generate_exercise(VERB, mode="inf_to_hebrew")
+    assert ex["answer"] == "לכתוב"
+
+def test_past_to_hebrew_answer():
+    ex = generate_exercise(VERB, mode="past_to_hebrew")
+    assert ex["answer"] == "כתב"
 
 def test_fill_blank_answer():
     ex = generate_exercise(VERB, mode="fill_blank")

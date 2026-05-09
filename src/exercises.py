@@ -1,6 +1,14 @@
 import random
 
-MODES = ["heb_to_inf", "inf_to_past", "past_to_inf", "fill_blank"]
+# כל פועל מקבל אחד מששת המצבים:
+# 1. עברית → איית הווה באנגלית
+# 2. הווה → איית עבר
+# 3. עבר → איית הווה
+# 4. הווה → כתוב פירוש בעברית
+# 5. עבר → כתוב פירוש בעברית
+# 6. השלם משפט בעבר
+
+MODES = ["heb_to_inf", "inf_to_past", "past_to_inf", "inf_to_hebrew", "past_to_hebrew", "fill_blank"]
 
 FILL_TEMPLATES = [
     "אתמול אני ___ [hint].",
@@ -39,18 +47,19 @@ def generate_exercise(verb, mode=None):
             "answer": inf,
             "hint": f"עברית: {heb}",
         }
-    elif mode == "scramble":
-        letters = list(past)
-        random.shuffle(letters)
-        while letters == list(past) and len(past) > 1:
-            random.shuffle(letters)
-        scrambled = " - ".join(letters)
+    elif mode == "inf_to_hebrew":
         return {
             "mode": mode,
-            "prompt": f"סדר את האותיות לצורת העבר של **{inf}**:\n\n### {scrambled}",
-            "answer": past,
-            "scrambled": "".join(letters),
-            "hint": f"עברית עבר: {heb_past}",
+            "prompt": f"מה הפירוש בעברית של:  **{inf}**",
+            "answer": heb,
+            "hint": f"עבר: {past}",
+        }
+    elif mode == "past_to_hebrew":
+        return {
+            "mode": mode,
+            "prompt": f"מה הפירוש בעברית של:  **{past}**",
+            "answer": heb_past,
+            "hint": f"שם פועל: {inf} ({heb})",
         }
     elif mode == "fill_blank":
         template = random.choice(FILL_TEMPLATES).replace("[hint]", f"({inf})")
