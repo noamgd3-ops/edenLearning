@@ -4,9 +4,29 @@ from pathlib import Path
 import streamlit as st
 import streamlit.components.v1 as components
 
+import random
+
 from src.db import init_db, get_all_progress, update_progress
 from src.scheduler import pick_session_words
 from src.exercises import generate_exercise, check_answer
+
+CORRECT_MESSAGES = [
+    "אלופה!!! 🏆",
+    "תותחי על חלל!! 🚀",
+    "וואו, גאון!! 🧠",
+    "מדהים!! כל הכבוד!! 🔥",
+    "ישר כוח!! אין עליך! 💪",
+    "פגעת בול!! 🎯",
+    "סופרסטאר!! ⭐⭐⭐",
+    "אתה מכבש!! 😎",
+    "מושלם!! כמו שעון! ⏱️",
+    "בום!! נכון לגמרי! 💥",
+    "ברבור! יפה מאוד! 🦢",
+    "כן כן כן!!! 🎉",
+    "לא מפסיק להפתיע! 🤩",
+    "חד וחלק!! ✂️",
+    "אלוף העולם!! 🌍",
+]
 
 DB_PATH = "data/progress.db"
 VERBS_PATH = "data/verbs.json"
@@ -235,10 +255,12 @@ def show_exercise():
         past = verb["past"]
 
         if correct:
+            msg = random.choice(CORRECT_MESSAGES)
             st.markdown(
                 f'<div class="correct-box">'
-                f'✅ <b>נכון!</b> &nbsp; <b>{inf}</b> → <b>{past}</b><br>'
-                f'<span style="font-size:1.3rem">🇮🇱 {heb} ← {heb_past}</span>'
+                f'<span style="font-size:1.4rem;font-weight:700">{msg}</span><br>'
+                f'<b>{inf}</b> → <b>{past}</b> &nbsp;&nbsp; '
+                f'<span style="font-size:1.2rem">🇮🇱 {heb} ← {heb_past}</span>'
                 f'</div>',
                 unsafe_allow_html=True
             )
