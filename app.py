@@ -171,6 +171,14 @@ def show_home():
                 st.rerun()
 
     st.write("")
+    col_start, col_analytics = st.columns([3, 1])
+    with col_analytics:
+        if st.button("📊 אנליטיקס", width="stretch"):
+            st.session_state.screen = "analytics"
+            st.rerun()
+    with col_start:
+        pass
+
     if st.button("▶  התחלי תרגול", type="primary", width="stretch"):
         st.session_state.screen = "exercise"
         st.session_state.session_index = 0
@@ -269,7 +277,7 @@ def show_exercise():
             st.session_state.last_correct = correct
             st.session_state.last_response_time = elapsed
             st.session_state.submitted = True
-            update_progress(verb["infinitive"], correct=correct, db_path=DB_PATH)
+            update_progress(verb["infinitive"], correct=correct, response_time=elapsed, db_path=DB_PATH)
             if correct:
                 st.session_state.session_correct += 1
             st.session_state.session_results.append({
@@ -398,6 +406,64 @@ def show_summary():
 
 
 # ══════════════════════════════════════════════════════════════════════════
+# דף אנליטיקס
+# ══════════════════════════════════════════════════════════════════════════
+def show_analytics():
+    st.title("📊 אנליטיקס")
+    if st.button("🏠 חזרה לבית"):
+        reset_session()
+        st.rerun()
+
+    progress = get_all_progress(DB_PATH)
+    verb_lookup = {v["infinitive"]: v for v in verbs}
+
+    if not progress:
+        st.info("עדיין אין נתונים. תתחילי לתרגל!")
+        return
+
+    rows = []
+    for verb, p in progress.items():
+        v = verb_lookup.get(verb, {})
+        seen = p["times_seen"]
+        correct = p["times_correct"]
+        wrong = seen - correct
+        accuracy = int(correct / seen * 100) if seen else 0
+        avg_time = p.get("total_response_time", 0) / seen if seen else 0
+        last_time = p.get("last_response_time", 0)
+        rows.append({
+            "פועל": verb,
+            "עבר": v.get("past", ""),
+            "עברית": v.get("hebrew", ""),
+            "נראה": seen,
+            "✅ נכון": correct,
+            "❌ טעות": wrong,
+            "דיוק %": accuracy,
+            "זמן אחרון (s)": round(last_time, 2),
+            "זמן ממוצע (s)": round(avg_time, 2),
+            "סטטוס": p["status"],
+        })
+
+    # sort by difficulty: most errors first, then slowest avg time
+    rows.sort(key=lambda r: (-r["❌ טעות"], -r["זמן ממוצע (s)"]))
+
+    st.subheader("🔴 המילים הקשות ביותר")
+    hard = [r for r in rows if r["❌ טעות"] > 0]
+    if hard:
+        st.dataframe(hard, use_container_width=True, hide_index=True)
+    else:
+        st.success("אין טעויות עד כה! 🎉")
+
+    st.divider()
+    st.subheader("⏱️ זמן תגובה — איטיות ביותר")
+    by_time = sorted(rows, key=lambda r: -r["זמן ממוצע (s)"])[:15]
+    st.dataframe(by_time, use_container_width=True, hide_index=True)
+
+    st.divider()
+    st.subheader("📋 כל המילים")
+    st.dataframe(rows, use_container_width=True, hide_index=True)
+
+
+# ══════════════════════════════════════════════════════════════════════════
 # ניתוב
 # ══════════════════════════════════════════════════════════════════════════
 screen = st.session_state.get("screen", "home")
@@ -407,3 +473,5 @@ elif screen == "exercise":
     show_exercise()
 elif screen == "summary":
     show_summary()
+elif screen == "analytics":
+    show_analytics()
