@@ -28,6 +28,14 @@ CORRECT_MESSAGES = [
     "את פשוט מבריקה!! ✨",
 ]
 
+WRONG_MESSAGES = [
+    "Ничего, в следующий раз! 💪",
+    "לא נורא, פעם הבאה! 😊",
+    "קרוב! תנסי שוב 🎯",
+    "זה קורה, קדימה! 💫",
+    "Ничего, в следующий раз! 💪",
+]
+
 DB_PATH = "data/progress.db"
 VERBS_PATH = "data/verbs.json"
 
@@ -266,10 +274,12 @@ def show_exercise():
                 unsafe_allow_html=True
             )
         else:
+            wrong_msg = random.choice(WRONG_MESSAGES)
             st.markdown(
                 f'<div class="wrong-box">'
-                f'❌ התשובה הנכונה היא: <b>{ex["answer"]}</b><br>'
-                f'<span style="font-size:1.3rem">🇮🇱 {heb} ← {heb_past}</span>'
+                f'<span style="font-size:1.2rem;font-weight:700">{wrong_msg}</span><br>'
+                f'התשובה הנכונה היא: <b>{ex["answer"]}</b> &nbsp;&nbsp; '
+                f'<span style="font-size:1.2rem">🇮🇱 {heb} ← {heb_past}</span>'
                 f'</div>',
                 unsafe_allow_html=True
             )
