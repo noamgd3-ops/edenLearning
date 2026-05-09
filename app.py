@@ -109,6 +109,14 @@ window.parent.document.addEventListener('keydown', function(e) {
 """, height=0)
 
 
+PRACTICE_MODES = {
+    "🎲 כללי": None,
+    "✍️ spelling הווה": "heb_to_inf",
+    "✍️ spelling עבר": "inf_to_past",
+    "🇮🇱 פירוש בעברית": "inf_to_hebrew",
+    "✏️ השלם את המשפט": "fill_blank",
+}
+
 def reset_session():
     progress = get_all_progress(DB_PATH)
     session_words = pick_session_words(verbs, progress, SESSION_SIZE)
@@ -122,6 +130,7 @@ def reset_session():
         "submitted": False,
         "last_correct": None,
         "show_hint": False,
+        "selected_mode": None,
     })
 
 
@@ -150,7 +159,18 @@ def show_home():
     due_words = st.session_state.session_words
     st.info(f"סשן היום: **{len(due_words)} פעלים** לתרגול.")
 
-    if st.button("▶  התחל תרגול", type="primary", width="stretch"):
+    st.subheader("בחרי סוג תרגול:")
+    cols = st.columns(len(PRACTICE_MODES))
+    for col, (label, mode_val) in zip(cols, PRACTICE_MODES.items()):
+        with col:
+            is_selected = st.session_state.get("selected_mode", None) == mode_val
+            btn_type = "primary" if is_selected else "secondary"
+            if st.button(label, type=btn_type, use_container_width=True):
+                st.session_state.selected_mode = mode_val
+                st.rerun()
+
+    st.write("")
+    if st.button("▶  התחלי תרגול", type="primary", width="stretch"):
         st.session_state.screen = "exercise"
         st.session_state.session_index = 0
         st.session_state.session_correct = 0
@@ -199,7 +219,7 @@ def show_exercise():
     st.caption(f"✅ {correct_so_far} נכונות עד כה")
 
     if st.session_state.current_ex is None:
-        st.session_state.current_ex = generate_exercise(verb)
+        st.session_state.current_ex = generate_exercise(verb, mode=st.session_state.get("selected_mode"))
         st.session_state.submitted = False
         st.session_state.show_hint = False
 
