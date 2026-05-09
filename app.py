@@ -36,11 +36,9 @@ WRONG_MESSAGES = [
     "לא נורא, פעם הבאה! 😊",
 ]
 
-DB_PATH = "data/progress.db"
 VERBS_PATH = "data/verbs.json"
 
-Path("data").mkdir(exist_ok=True)
-init_db(DB_PATH)
+init_db()
 verbs = json.loads(Path(VERBS_PATH).read_text(encoding="utf-8"))
 SESSION_SIZE = len(verbs)
 
@@ -119,7 +117,7 @@ PRACTICE_MODES = {
 }
 
 def reset_session():
-    progress = get_all_progress(DB_PATH)
+    progress = get_all_progress()
     session_words = pick_session_words(verbs, progress, SESSION_SIZE)
     st.session_state.update({
         "screen": "home",
@@ -145,7 +143,7 @@ if "screen" not in st.session_state:
 def show_home():
     st.title("🔥 School Cool")
 
-    progress = get_all_progress(DB_PATH)
+    progress = get_all_progress()
     total = len(verbs)
     mastered = sum(1 for p in progress.values() if p["status"] == "mastered")
     learning = sum(1 for p in progress.values() if p["status"] == "learning")
@@ -278,7 +276,7 @@ def show_exercise():
             st.session_state.last_response_time = elapsed
             st.session_state.submitted = True
             wrong_ans = "" if correct else user_input.strip()
-            update_progress(verb["infinitive"], correct=correct, response_time=elapsed, wrong_answer=wrong_ans, db_path=DB_PATH)
+            update_progress(verb["infinitive"], correct=correct, response_time=elapsed, wrong_answer=wrong_ans, )
             if correct:
                 st.session_state.session_correct += 1
             st.session_state.session_results.append({
@@ -429,7 +427,7 @@ def show_analytics():
         col_yes, col_no = st.columns(2)
         with col_yes:
             if st.button("כן, מחקי הכל 🗑️", type="primary"):
-                reset_all_progress(DB_PATH)
+                reset_all_progress()
                 st.session_state.confirm_reset = False
                 st.success("כל הנתונים אופסו ✅")
                 st.rerun()
@@ -438,7 +436,7 @@ def show_analytics():
                 st.session_state.confirm_reset = False
                 st.rerun()
 
-    progress = get_all_progress(DB_PATH)
+    progress = get_all_progress()
     verb_lookup = {v["infinitive"]: v for v in verbs}
 
     if not progress:

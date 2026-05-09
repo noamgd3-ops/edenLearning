@@ -1,58 +1,49 @@
-import sqlite3
+import os
 from datetime import date, timedelta
 
-DB_PATH = "data/progress.db"
+from supabase import create_client
 
-def init_db(db_path=DB_PATH):
-    con = sqlite3.connect(db_path)
-    con.execute("""
-        CREATE TABLE IF NOT EXISTS progress (
-            verb TEXT PRIMARY KEY,
-            times_seen INTEGER DEFAULT 0,
-            times_correct INTEGER DEFAULT 0,
-            ease_factor REAL DEFAULT 2.5,
-            interval_days REAL DEFAULT 1.0,
-            next_review TEXT DEFAULT '2000-01-01',
-            consecutive_correct INTEGER DEFAULT 0,
-            status TEXT DEFAULT 'new',
-            total_response_time REAL DEFAULT 0.0,
-            last_response_time REAL DEFAULT 0.0,
-            last_wrong_answer TEXT DEFAULT ''
-        )
-    """)
-    for col in (
-        "total_response_time REAL DEFAULT 0.0",
-        "last_response_time REAL DEFAULT 0.0",
-        "last_wrong_answer TEXT DEFAULT ''",
-    ):
-        try:
-            con.execute(f"ALTER TABLE progress ADD COLUMN {col}")
-        except Exception:
-            pass
-    con.commit()
-    con.close()
+def _get_credentials():
+    try:
+        import streamlit as st
+        url = st.secrets["SUPABASE_URL"]
+        key = st.secrets["SUPABASE_KEY"]
+    except Exception:
+        url = os.environ.get("SUPABASE_URL", "https://qdgofyprngpuzlcudmvf.supabase.co")
+        key = os.environ.get("SUPABASE_KEY", "")
+    return url, key
 
-def _row_to_dict(row):
-    keys = ["verb", "times_seen", "times_correct", "ease_factor",
-            "interval_days", "next_review", "consecutive_correct", "status",
-            "total_response_time", "last_response_time", "last_wrong_answer"]
-    return dict(zip(keys, row))
+def _client():
+    url, key = _get_credentials()
+    return create_client(url, key)
 
-def get_progress(verb, db_path=DB_PATH):
-    con = sqlite3.connect(db_path)
-    row = con.execute("SELECT * FROM progress WHERE verb=?", (verb,)).fetchone()
-    con.close()
-    if row:
-        return _row_to_dict(row)
+def init_db(db_path=None):
+    pass  # Table already exists in Supabase
+
+def _default_row(verb):
     return {
-        "verb": verb, "times_seen": 0, "times_correct": 0,
-        "ease_factor": 2.5, "interval_days": 1.0,
-        "next_review": "2000-01-01", "consecutive_correct": 0, "status": "new",
-        "total_response_time": 0.0, "last_response_time": 0.0, "last_wrong_answer": "",
+        "verb": verb,
+        "times_seen": 0,
+        "times_correct": 0,
+        "ease_factor": 2.5,
+        "interval_days": 1.0,
+        "next_review": "2000-01-01",
+        "consecutive_correct": 0,
+        "status": "new",
+        "total_response_time": 0.0,
+        "last_response_time": 0.0,
+        "last_wrong_answer": "",
     }
 
-def update_progress(verb, correct, response_time=0.0, wrong_answer="", db_path=DB_PATH):
-    p = get_progress(verb, db_path)
+def get_progress(verb, db_path=None):
+    sb = _client()
+    res = sb.table("progress").select("*").eq("verb", verb).execute()
+    if res.data:
+        return res.data[0]
+    return _default_row(verb)
+
+def update_progress(verb, correct, response_time=0.0, wrong_answer="", db_path=None):
+    p = get_progress(verb)
     p["times_seen"] += 1
     p["total_response_time"] = p.get("total_response_time", 0.0) + response_time
     p["last_response_time"] = response_time
@@ -63,50 +54,25 @@ def update_progress(verb, correct, response_time=0.0, wrong_answer="", db_path=D
         p["times_correct"] += 1
         p["consecutive_correct"] += 1
         new_ef = min(p["ease_factor"] + 0.1, 3.0)
-        new_interval = p["interval_days"] * new_ef
         p["ease_factor"] = new_ef
-        p["interval_days"] = new_interval
-        if p["consecutive_correct"] >= 3:
-            p["status"] = "mastered"
-        else:
-            p["status"] = "learning"
+        p["interval_days"] = p["interval_days"] * new_ef
+        p["status"] = "mastered" if p["consecutive_correct"] >= 3 else "learning"
     else:
         p["consecutive_correct"] = 0
         p["ease_factor"] = max(1.3, p["ease_factor"] - 0.2)
         p["interval_days"] = 1.0
         p["status"] = "learning" if p["times_seen"] > 1 else "new"
 
-    next_rev = (date.today() + timedelta(days=p["interval_days"])).isoformat()
-    p["next_review"] = next_rev
+    p["next_review"] = (date.today() + timedelta(days=p["interval_days"])).isoformat()
 
-    con = sqlite3.connect(db_path)
-    con.execute("""
-        INSERT INTO progress VALUES (?,?,?,?,?,?,?,?,?,?,?)
-        ON CONFLICT(verb) DO UPDATE SET
-            times_seen=excluded.times_seen,
-            times_correct=excluded.times_correct,
-            ease_factor=excluded.ease_factor,
-            interval_days=excluded.interval_days,
-            next_review=excluded.next_review,
-            consecutive_correct=excluded.consecutive_correct,
-            status=excluded.status,
-            total_response_time=excluded.total_response_time,
-            last_response_time=excluded.last_response_time,
-            last_wrong_answer=excluded.last_wrong_answer
-    """, (p["verb"], p["times_seen"], p["times_correct"], p["ease_factor"],
-          p["interval_days"], p["next_review"], p["consecutive_correct"], p["status"],
-          p["total_response_time"], p["last_response_time"], p.get("last_wrong_answer", "")))
-    con.commit()
-    con.close()
+    sb = _client()
+    sb.table("progress").upsert(p).execute()
 
-def get_all_progress(db_path=DB_PATH):
-    con = sqlite3.connect(db_path)
-    rows = con.execute("SELECT * FROM progress").fetchall()
-    con.close()
-    return {r[0]: _row_to_dict(r) for r in rows}
+def get_all_progress(db_path=None):
+    sb = _client()
+    res = sb.table("progress").select("*").execute()
+    return {r["verb"]: r for r in res.data}
 
-def reset_all_progress(db_path=DB_PATH):
-    con = sqlite3.connect(db_path)
-    con.execute("DELETE FROM progress")
-    con.commit()
-    con.close()
+def reset_all_progress(db_path=None):
+    sb = _client()
+    sb.table("progress").delete().neq("verb", "").execute()
